@@ -132,7 +132,7 @@ async function loadMyAds() {
       ? ads.map(p => `
         <div class="product-card" style="cursor:default">
           <div class="product-card-img" onclick="location.href='/pages/product.html?id=${p.id}'" style="cursor:pointer">
-            ${p.primary_image ? `<img src="${API.replace('/api','')}${p.primary_image}" alt="${p.title}" loading="lazy">` : '<div class="no-img">📷</div>'}
+            ${p.primary_image ? `<img src="${UI.imgUrl(p.primary_image)}" alt="${p.title}" loading="lazy">` : '<div class="no-img">📷</div>'}
           </div>
           <div class="product-card-body">
             <div class="product-card-title">${p.title}</div>

@@ -94,6 +94,14 @@ const Http = {
 
 /* ─── UI Helpers ──────────────────────────────────────────────── */
 const UI = {
+  /* ALTERADO: imagens novas vêm como base64 (data:...) direto do banco;
+     imagens antigas (antes da correção) ainda podem ser um caminho tipo
+     /uploads/products/xxx.jpg. Esta função trata os dois casos. */
+  imgUrl(url) {
+    if (!url) return '';
+    return url.startsWith('data:') ? url : `${API.replace('/api', '')}${url}`;
+  },
+
   /* Toast */
   toast(msg, type = 'info', duration = 3500) {
     const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
@@ -188,7 +196,7 @@ const UI = {
   /* Build product card HTML */
   productCard(p, showFav = true) {
     const img = p.primary_image
-      ? `<img src="${API.replace('/api','')}${p.primary_image}" alt="${p.title}" loading="lazy" class="lazy" onload="this.classList.add('loaded')">`
+      ? `<img src="${UI.imgUrl(p.primary_image)}" alt="${p.title}" loading="lazy" class="lazy" onload="this.classList.add('loaded')">`
       : `<div class="no-img">📷</div>`;
     return `
       <div class="product-card${p.featured ? ' featured' : ''}" onclick="window.location.href='/pages/product.html?id=${p.id}'">

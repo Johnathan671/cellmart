@@ -220,7 +220,7 @@ async function loadProducts(page = 1) {
       <tr>
         <td>
           <div style="display:flex;align-items:center;gap:10px">
-            ${p.primary_image ? `<img src="http://localhost:3001${p.primary_image}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0">` : '<div style="width:40px;height:40px;background:var(--lighter);border-radius:6px;display:flex;align-items:center;justify-content:center">📷</div>'}
+            ${p.primary_image ? `<img src="${UI.imgUrl(p.primary_image)}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0">` : '<div style="width:40px;height:40px;background:var(--lighter);border-radius:6px;display:flex;align-items:center;justify-content:center">📷</div>'}
             <div><a href="/pages/product.html?id=${p.id}" target="_blank" style="font-weight:600;font-size:.85rem;color:var(--brand)">${p.title.slice(0,40)}…</a><div style="font-size:.75rem;color:var(--mid)">${p.category_name||''}</div></div>
           </div>
         </td>

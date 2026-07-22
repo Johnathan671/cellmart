@@ -139,11 +139,15 @@ router.post('/', authenticate, upload.array('images', 8), sanitizeBody,
         [id, title, description||'', parseFloat(price), price_negotiable ? 1 : 0, condition, parseInt(category_id), req.user.id, city||null, state||null, neighborhood||null]
       );
 
+      // ALTERADO: as imagens agora chegam como buffer em memória (ver middleware/upload.js)
+      // e são salvas como base64 direto no banco, em vez de arquivo em disco.
       if (req.files && req.files.length > 0) {
         for (let i = 0; i < req.files.length; i++) {
+          const file = req.files[i];
+          const dataUrl = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
           await pool.query(
             'INSERT INTO product_images (product_id, url, is_primary, sort_order) VALUES ($1,$2,$3,$4)',
-            [id, `/uploads/products/${req.files[i].filename}`, i === 0 ? 1 : 0, i]
+            [id, dataUrl, i === 0 ? 1 : 0, i]
           );
         }
       }
@@ -180,8 +184,10 @@ router.put('/:id', authenticate, upload.array('newImages', 8), sanitizeBody, asy
     if (req.files?.length > 0) {
       const existing = parseInt((await pool.query('SELECT COUNT(*) AS c FROM product_images WHERE product_id=$1', [req.params.id])).rows[0].c);
       for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        const dataUrl = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
         await pool.query('INSERT INTO product_images (product_id, url, sort_order) VALUES ($1,$2,$3)',
-          [req.params.id, `/uploads/products/${req.files[i].filename}`, existing + i]);
+          [req.params.id, dataUrl, existing + i]);
       }
     }
     res.json({ message: 'Anúncio atualizado' });
@@ -195,10 +201,15 @@ router.delete('/:id', authenticate, async (req, res) => {
   const product = (await pool.query('SELECT * FROM products WHERE id=$1', [req.params.id])).rows[0];
   if (!product) return res.status(404).json({ error: 'Não encontrado' });
   if (product.seller_id !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ error: 'Sem permissão' });
+  // ALTERADO: imagens antigas (antes da migração) podem ainda ser um caminho
+  // de arquivo em /uploads/products/...; imagens novas são base64 (data:...)
+  // e não existem mais em disco, então só tentamos apagar o que for arquivo real.
   const images = (await pool.query('SELECT url FROM product_images WHERE product_id=$1', [req.params.id])).rows;
   images.forEach(img => {
-    const filePath = path.join(__dirname, '..', img.url);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    if (img.url.startsWith('/uploads/')) {
+      const filePath = path.join(__dirname, '..', img.url);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
   });
   await pool.query('DELETE FROM products WHERE id=$1', [req.params.id]);
   res.json({ message: 'Anúncio removido' });
